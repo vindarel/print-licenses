@@ -1,5 +1,5 @@
 ;; #|
-;;   This file is a part of print-licences project.
+;;   This file is a part of print-licenses project.
 ;; |#
 
 

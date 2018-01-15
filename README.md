@@ -34,5 +34,5 @@ Example:
 
 Code entirely taken from
 [**@sjl**'s utilities](https://github.com/sjl/cl-losh/blob/master/losh.lisp),
-the original snippet to build the licence tree coming from a
+the original snippet to build the license tree coming from a
 **@dk_jackdaniel**'s [snippet](http://paste.lisp.org/display/327154).
