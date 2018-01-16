@@ -10,7 +10,7 @@
 
 (defsystem "print-licenses"
   :version "0.1.0"
-  :author ""
+  :author "vindarel"
   :license "MIT"
   :depends-on (:alexandria
                :iterate)
