@@ -66,20 +66,27 @@
 ;;; Original code from @dk_jackdaniel:
 ;;; http://paste.lisp.org/display/327154
 (defun license-tree (quicklisp-project-designator)
-  (let ((sys (ql-dist:dependency-tree quicklisp-project-designator)))
-    (assert (not (null sys)) ()
-      "Cannot find Quicklisp project for designator ~S"
-      quicklisp-project-designator)
-    (shut-up
-      (ql:quickload quicklisp-project-designator))
-    (map-tree
-      (lambda (s)
-        (vector (slot-value s 'ql-dist:name)
-                (or (asdf:system-license
+  (flet ((dependency-tree (project)
+           (uiop:symbol-call :ql-dist :dependency-tree project))
+         (quickload (project)
+           (uiop:symbol-call :ql :quickload project))
+         (system-file-name (s)
+           (uiop:symbol-call :ql-dist :system-file-name s)))
+    (let ((name-slot-symbol (find-symbol (string 'name) :ql-dist))
+          (sys (dependency-tree quicklisp-project-designator)))
+      (assert (not (null sys)) ()
+              "Cannot find Quicklisp project for designator ~S"
+              quicklisp-project-designator)
+      (shut-up
+       (quickload quicklisp-project-designator))
+      (map-tree
+       (lambda (s)
+         (vector (slot-value s name-slot-symbol)
+                 (or (asdf:system-license
                       (asdf:find-system
-                        (ql-dist:system-file-name s)))
-                    "Unspecified")))
-      sys)))
+                       (system-file-name s)))
+                     "Unspecified")))
+       sys))))
 
 (defun license-list (quicklisp-project-designator)
   (remove-duplicates
