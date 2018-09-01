@@ -1,6 +1,6 @@
 # Print licenses used by the given project and its dependencies
 
-Clone this repo in `~/quicklisp/local-projects` and
+Install with Quicklisp:
 
     (ql:quickload "print-licenses")
 
