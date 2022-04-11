@@ -124,10 +124,8 @@
        sys))))
 
 (defun license-list (quicklisp-project-designator)
-  (remove-duplicates
-    (mapcar (alexandria:rcurry #'coerce 'list)
-            (alexandria:flatten (license-tree quicklisp-project-designator)))
-    :key #'car :test #'string=))
+  (mapcar (alexandria:rcurry #'coerce 'list)
+          (alexandria:flatten (license-tree quicklisp-project-designator))))
 
 (defun print-licenses (quicklisp-project-designator)
   "Print the licenses used by the given project and its dependencies.
