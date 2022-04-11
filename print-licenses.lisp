@@ -20,16 +20,18 @@
 
 ;; from quickutil.
 (defun map-tree (function tree)
-    "Map `function` to each of the leave of `tree`."
-    (check-type tree cons)
-    (labels ((rec (tree)
-               (cond
-                 ((null tree) nil)
-                 ((atom tree) (funcall function tree))
-                 ((consp tree)
-                  (cons (rec (car tree))
-                        (rec (cdr tree)))))))
-      (rec tree)))
+  "Applies `function` to each of the leave of `tree`.
+   Returns no values, because function results are discarded."
+  (check-type tree cons)
+  (labels ((rec (tree)
+             (cond
+               ((null tree) nil)
+               ((atom tree) (funcall function tree))
+               ((consp tree)
+                (rec (car tree))
+                (rec (cdr tree))))))
+    (rec tree)
+    (values)))
 
 (defun aesthetic-string (thing)
   ;; Quickutil
@@ -102,30 +104,44 @@
 
 ;;; Original code from @dk_jackdaniel:
 ;;; http://paste.lisp.org/display/327154
-(defun license-tree (quicklisp-project-designator)
+(defun license-list (quicklisp-project-designator)
   (flet ((quickload (project)
            (uiop:symbol-call :ql :quickload project))
          (system-file-name (s)
-           (uiop:symbol-call :ql-dist :system-file-name s)))
-    (let ((name-slot-symbol (find-symbol (string 'name) :ql-dist))
-          (sys (dependency-tree quicklisp-project-designator)))
+           (uiop:symbol-call :ql-dist :system-file-name s))
+         (system-name (s)
+           (uiop:symbol-call :ql-dist :name s)))
+    (let ((sys (dependency-tree quicklisp-project-designator))
+          (primary-system-license (make-hash-table :test 'equal)))
       (assert (not (null sys)) ()
               "Cannot find Quicklisp project for designator ~S"
               quicklisp-project-designator)
       (shut-up
         (quickload quicklisp-project-designator))
-      (map-tree
-       (lambda (s)
-         (vector (slot-value s name-slot-symbol)
-                 (or (asdf:system-license
-                      (asdf:find-system
-                       (system-file-name s)))
-                     "Unspecified")))
-       sys))))
-
-(defun license-list (quicklisp-project-designator)
-  (mapcar (alexandria:rcurry #'coerce 'list)
-          (alexandria:flatten (license-tree quicklisp-project-designator))))
+      
+      (uiop:while-collecting (collect-item)
+        (map-tree
+         (lambda (s)
+           (let* ((system-name (system-name s))
+                  (primary-name (asdf:primary-system-name system-name))
+                  (license (or (asdf:system-license
+                                (asdf:find-system
+                                 (system-file-name s)))
+                               "Unspecified"))
+                  (primary-license (gethash primary-name
+                                            primary-system-license)))
+             (when (string= system-name primary-name)
+               (setf (gethash primary-name
+                              primary-system-license)
+                     license))
+             
+             (when (or (null primary-license)
+                       (not (string= primary-license
+                                     license)))
+               (collect-item
+                (list system-name
+                      license)))))
+         sys)))))
 
 (defun print-licenses (quicklisp-project-designator)
   "Print the licenses used by the given project and its dependencies.
