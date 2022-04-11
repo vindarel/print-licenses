@@ -30,6 +30,22 @@ Example:
   uiop                 | Unspecified
 ~~~
 
+Or you might want to group systems by their license:
+
+~~~lisp
+  (print-licenses :fast-io
+                  :group-by-license t)
+  =>
+  MIT
+    babel, cffi, cffi-grovel, cffi-toolchain, fast-io, static-vectors, trivial-features, trivial-gray-streams
+
+  Public Domain / 0-clause MIT
+    alexandria
+
+  Unspecified
+    asdf, uiop
+~~~
+
 ## Credit
 
 Code entirely taken from
