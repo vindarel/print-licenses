@@ -63,12 +63,47 @@
       (format t "~{~vA~^ | ~}~%" (weave column-sizes row))))
   (values))
 
+
+(defun dependency-tree (system)
+  "The difference between this function and ql-dist:dependency-tree
+   is that it uses caching and also it returns not a full tree but
+   each system is occur in the resulting tree only once.
+
+   This makes it 1000 times faster and makes difference on systems
+   having large amount of dependencies like Reblocks."
+  (let ((qldist-system
+          (intern "SYSTEM" (find-package "QL-DIST")))
+        (already-processed (make-hash-table :test 'equal)))
+    (labels ((system-name (system)
+               (uiop:symbol-call :ql-dist :name system))
+             (rec (system)
+               (cond
+                 ((typep system 'symbol)
+                  (rec (string-downcase system)))
+                 ((typep system 'string)
+                  (let ((system (ql-dist:find-system system)))
+                    (when system
+                      (rec system))))
+                 ((typep system qldist-system)
+                  (let* ((name (system-name system))
+                         (found (gethash name already-processed)))
+                    (unless found
+                      (setf (gethash name already-processed)
+                            t)
+                       
+                      (list* system
+                             (remove nil
+                                     (mapcar #'rec (ql-dist:required-systems system)))))))
+                 (t (error "Unable to handle system of this type: ~S"
+                           system)))))
+      (ql-dist:with-consistent-dists
+        (rec system)))))
+
+
 ;;; Original code from @dk_jackdaniel:
 ;;; http://paste.lisp.org/display/327154
 (defun license-tree (quicklisp-project-designator)
-  (flet ((dependency-tree (project)
-           (uiop:symbol-call :ql-dist :dependency-tree project))
-         (quickload (project)
+  (flet ((quickload (project)
            (uiop:symbol-call :ql :quickload project))
          (system-file-name (s)
            (uiop:symbol-call :ql-dist :system-file-name s)))
@@ -78,7 +113,7 @@
               "Cannot find Quicklisp project for designator ~S"
               quicklisp-project-designator)
       (shut-up
-       (quickload quicklisp-project-designator))
+        (quickload quicklisp-project-designator))
       (map-tree
        (lambda (s)
          (vector (slot-value s name-slot-symbol)
