@@ -143,7 +143,7 @@
                       license)))))
          sys)))))
 
-(defun print-licenses (quicklisp-project-designator)
+(defun print-licenses (quicklisp-project-designator &key group-by-license)
   "Print the licenses used by the given project and its dependencies.
   Note that in order to do this the project must be `quickload`ed, so you might
   want to do this in a separate Lisp image if you don't want to clutter your
@@ -165,6 +165,25 @@
     trivial-gray-streams | MIT
     uiop                 | Unspecified
   "
-  (print-table (sort (license-list quicklisp-project-designator)
-                     #'string<
-                     :key #'car)))
+  (let ((all-licenses (license-list quicklisp-project-designator)))
+    (cond
+      (group-by-license
+       (flet ((sort-strings (strings)
+                (sort (copy-list strings) #'string<)))
+         (loop with grouped = (make-hash-table :test 'equal)
+               with licenses = nil
+               for (system-name license) in all-licenses
+               do (push system-name
+                        (gethash license grouped))
+               finally
+                  (loop with licenses = (sort-strings
+                                         (alexandria:hash-table-keys grouped))
+                        for license in licenses
+                        for systems = (sort-strings (gethash license grouped))
+                        do (format t "~A~%  ~{~A~^, ~}~2%"
+                                   license
+                                   systems)))))
+      (t
+       (print-table (sort all-licenses
+                          #'string<
+                          :key #'car))))))
