@@ -83,7 +83,7 @@
                  ((typep system 'symbol)
                   (rec (string-downcase system)))
                  ((typep system 'string)
-                  (let ((system (ql-dist:find-system system)))
+                  (let ((system (uiop:symbol-call :ql-dist :find-system system)))
                     (when system
                       (rec system))))
                  ((typep system qldist-system)
@@ -95,11 +95,13 @@
                        
                       (list* system
                              (remove nil
-                                     (mapcar #'rec (ql-dist:required-systems system)))))))
+                                     (mapcar #'rec (uiop:symbol-call :ql-dist :required-systems system)))))))
                  (t (error "Unable to handle system of this type: ~S"
                            system)))))
-      (ql-dist:with-consistent-dists
-        (rec system)))))
+      (uiop:symbol-call :ql-dist
+                        :call-with-consistent-dists
+                        (lambda ()
+                          (rec system))))))
 
 
 ;;; Original code from @dk_jackdaniel:
